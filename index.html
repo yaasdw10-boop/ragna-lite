@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Ragna Lite Online</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:Tahoma,sans-serif;touch-action:none;color:#fff}
+canvas#c{position:fixed;inset:0;display:block}
+.panel{background:rgba(10,15,35,.78);border:1px solid #4a5a8a;border-radius:10px}
+#hud{position:fixed;top:8px;left:8px;width:210px;padding:8px;font-size:12px}
+#hud .nm{font-weight:bold;font-size:13px;margin-bottom:4px}
+.bar{height:12px;background:#222;border-radius:6px;overflow:hidden;margin:3px 0;position:relative}
+.bar i{display:block;height:100%}
+.bar span{position:absolute;inset:0;font-size:9px;text-align:center;line-height:12px;text-shadow:0 0 2px #000}
+#mini{position:fixed;top:8px;right:8px;width:110px;height:110px}
+#menu{position:fixed;top:124px;right:8px;display:flex;flex-direction:column;gap:6px;width:110px}
+#menu button,.mb{background:linear-gradient(#3b4f8f,#24315e);color:#fff;border:1px solid #7b8fd0;border-radius:8px;padding:7px 4px;font-size:12px;font-family:inherit}
+#menu button.on{background:linear-gradient(#16a34a,#14532d)}
+#chat{position:fixed;left:8px;bottom:170px;width:min(60vw,320px);font-size:11px;pointer-events:none}
+#chat div{background:rgba(0,0,0,.45);padding:2px 6px;margin-top:2px;border-radius:4px}
+#joy{position:fixed;left:24px;bottom:24px;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,.1);border:2px solid rgba(255,255,255,.25)}
+#knob{position:absolute;left:38px;top:38px;width:50px;height:50px;border-radius:50%;background:rgba(255,255,255,.45);pointer-events:none}
+#acts{position:fixed;right:16px;bottom:16px;width:200px;height:200px}
+#acts button{position:absolute;border-radius:50%;border:2px solid rgba(255,255,255,.5);color:#fff;font-weight:bold;font-family:inherit;font-size:10px;line-height:1.1}
+#bAtk{right:10px;bottom:10px;width:84px;height:84px;background:radial-gradient(#ef4444,#7f1d1d);font-size:15px!important}
+#bS1{right:105px;bottom:15px;width:58px;height:58px;background:radial-gradient(#f59e0b,#78350f)}
+#bS2{right:95px;bottom:85px;width:58px;height:58px;background:radial-gradient(#8b5cf6,#3b0764)}
+#bS3{right:25px;bottom:105px;width:58px;height:58px;background:radial-gradient(#22c55e,#14532d)}
+#bPot{right:150px;bottom:140px;width:46px;height:46px;background:radial-gradient(#f87171,#991b1b)}
+#banner{position:fixed;top:30%;left:50%;transform:translateX(-50%);font-size:22px;font-weight:bold;color:#ffd400;text-shadow:0 0 6px #000,0 0 12px #f00;pointer-events:none;text-align:center;opacity:0;transition:opacity .4s;width:90%}
+#woebar{position:fixed;top:112px;left:8px;padding:6px 10px;font-size:12px;display:none}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:10}
+.modal .box{width:min(92vw,380px);padding:18px;text-align:center}
+.box h1{font-size:22px;color:#ffd400;margin-bottom:4px}
+.box input{width:100%;padding:10px;border-radius:8px;border:1px solid #7b8fd0;background:#0b1230;color:#fff;font-size:16px;margin:10px 0;user-select:text;-webkit-user-select:text}
+.jobs{display:flex;gap:6px;margin-bottom:6px}
+.jobs button{flex:1;padding:10px 4px;border-radius:8px;border:2px solid #444;background:#1e293b;color:#fff;font-family:inherit;font-size:12px}
+.jobs button.sel{border-color:#ffd400;background:#334155}
+.box .mb{width:100%;margin-top:8px;padding:11px;font-size:15px}
+.row{display:flex;justify-content:space-between;align-items:center;margin:10px 0;font-size:13px;gap:6px;text-align:left}
+.row .mb{width:auto;margin:0;padding:8px 10px;font-size:13px}
+.hide{display:none!important}
+@media (max-height:500px){
+ #menu{top:8px;right:126px;flex-direction:row;width:auto}
+ #menu button{padding:5px 6px;font-size:11px}
+ #acts{transform:scale(.8);transform-origin:right bottom}
+ #joy{transform:scale(.85);transform-origin:left bottom}
+ #chat{bottom:130px}
+}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud" class="panel hide">
+ <div class="nm" id="hName"></div>
+ <div class="bar"><i id="hpB" style="background:#ef4444"></i><span id="hpT"></span></div>
+ <div class="bar"><i id="spB" style="background:#3b82f6"></i><span id="spT"></span></div>
+ <div class="bar"><i id="exB" style="background:#facc15"></i><span id="exT"></span></div>
+ <div id="hInfo"></div>
+</div>
+<canvas id="mini" class="panel hide" width="110" height="110"></canvas>
+<div id="menu" class="hide">
+ <button id="mAuto">🤖 AUTO: ปิด</button>
+ <button id="mBoss">👹 บอส</button>
+ <button id="mWoe">⚔️ วอกิลด์</button>
+ <button id="mShop">🛒 ร้านค้า</button>
+</div>
+<div id="woebar" class="panel"></div>
+<div id="chat"></div>
+<div id="joy" class="hide"><div id="knob"></div></div>
+<div id="acts" class="hide">
+ <button id="bAtk">⚔️<br>ตี</button>
+ <button id="bS1">S1</button><button id="bS2">S2</button><button id="bS3">Heal</button>
+ <button id="bPot">🧪<br>5</button>
+</div>
+<div id="banner"></div>
+
+<div id="start" class="modal"><div class="box panel">
+ <h1>⚔️ Ragna Lite Online</h1>
+ <div style="font-size:12px;opacity:.8">MMORPG สไตล์ Ragnarok บนเบราว์เซอร์</div>
+ <input id="iName" maxlength="12" placeholder="ตั้งชื่อตัวละคร">
+ <div class="jobs">
+  <button data-j="Swordman" class="sel">🗡️<br>Swordman<br><small>ถึก ระยะประชิด</small></button>
+  <button data-j="Mage">🔮<br>Mage<br><small>เวทแรง ตัวบาง</small></button>
+  <button data-j="Archer">🏹<br>Archer<br><small>ยิงไกล ไว</small></button>
+ </div>
+ <button class="mb" id="bStart">เริ่มผจญภัยใหม่</button>
+ <button class="mb hide" id="bCont"></button>
+ <div style="font-size:11px;opacity:.7;margin-top:10px">มือถือ: จอยซ้าย / ปุ่มขวา / แตะมอนเพื่อเล็ง<br>PC: WASD เดิน, J ตี, 1-3 สกิล, Q ยา, E ออโต้, คลิกเพื่อเดิน/เล็ง</div>
+</div></div>
+
+<div id="shop" class="modal hide"><div class="box panel">
+ <h1>🛒 ร้านค้า Prontera</h1>
+ <div id="sInfo" style="font-size:13px;margin:6px 0"></div>
+ <div class="row"><span>🧪 Red Potion<br><small>ฟื้น HP 35% • 50z</small></span><button class="mb" id="buy1">ซื้อ 1</button><button class="mb" id="buy10">ซื้อ 10 (450z)</button></div>
+ <div class="row"><span id="refT"></span><button class="mb" id="bRef">⚒️ ตีบวก</button></div>
+ <div id="sMsg" style="min-height:18px;font-size:13px"></div>
+ <button class="mb" id="sClose">ปิด</button>
+ <button class="mb" id="sReset" style="background:#7f1d1d;font-size:12px">ลบเซฟ เริ่มใหม่</button>
+</div></div>
+
+<script>
+const $=id=>document.getElementById(id);
+const cv=$('c'),ctx=cv.getContext('2d'),mini=$('mini'),mctx=mini.getContext('2d');
+let W,H;function rs(){W=cv.width=innerWidth;H=cv.height=innerHeight}rs();addEventListener('resize',rs);
+const R=(a,b)=>Math.random()*(b-a)+a,D=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),pick=a=>a[Math.floor(Math.random()*a.length)];
+const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const CX=1600,CY=1600,FW=3200,WOEW=1400,WOEH=1000,TOWN=230,LAIR={x:2850,y:350};
+
+const JOBS={
+ Swordman:{hp:160,sp:30,atk:14,def:6,range:40,color:'#3b82f6',spd:150,s1:'Bash',s2:'Magnum Break'},
+ Mage:{hp:95,sp:90,atk:19,def:2,range:170,color:'#a855f7',spd:140,s1:'Fire Bolt',s2:'Storm Gust'},
+ Archer:{hp:115,sp:55,atk:16,def:3,range:210,color:'#22c55e',spd:160,s1:'Double Strafe',s2:'Arrow Shower'}};
+const MOBS={
+ poring:{name:'Poring',lv:1,hp:45,atk:5,def:0,exp:10,z:[3,8],color:'#ff8fb1',r:14,spd:50,passive:1},
+ lunatic:{name:'Lunatic',lv:6,hp:110,atk:11,def:2,exp:30,z:[8,18],color:'#f5f5f5',r:15,spd:70,passive:1},
+ wolf:{name:'Wolf',lv:12,hp:260,atk:22,def:5,exp:75,z:[15,30],color:'#9ca3af',r:18,spd:95},
+ orc:{name:'Orc Warrior',lv:20,hp:520,atk:38,def:10,exp:160,z:[30,60],color:'#4d7c0f',r:22,spd:80},
+ deviruchi:{name:'Deviruchi',lv:30,hp:900,atk:55,def:15,exp:320,z:[50,100],color:'#7c3aed',r:20,spd:100}};
+const BOTN=['xXSwordXx','น้องพอริ่ง','MageKung','ArcherJa','LoveRO99','TankDaddy','ฟ้าใส','Zeny4Life','DarkLord','แมวส้ม','KnightZ','HiPriest','บาโฟหลอน','SoloPlay'];
+const CHAT=['ใครไปตีบาโฟเมทบ้าง','ขายของที่โปรนเทร่าจ้า','หาปาร์ตี้ครับ','+7 แตกอีกแล้ว T_T','วอกิลด์คืนนี้ใครไปบ้าง','พอริ่งน่ารักจัง','ขอฮีลหน่อยครับ','GG ครับ','เลเวลอัพแล้ว เย้!','หมาป่าตีเจ็บมาก','ใครมี Elunium ขายบ้าง','afk แปป'];
+const WCHAT=['บุก!!!','ตีเอมพ์เลย!','ระวังข้างหลัง','ขอฮีลด่วน','GoGoGo','ยึดปราสาทให้ได้!'];
+const ENEMYG=['[DarkKnights]','[ตี๋น้อยกิลด์]','[Valkyrie]','[NoobSlayer]'];
+
+let P=null,units=[],fieldUnits=[],woeUnits=[],fx=[],mode='field',camX=0,camY=0,boss=null,bossTimer=30,woe=null,autoHunt=false,selJob='Swordman',trees=[];
+
+/* ---------- Utils ---------- */
+const needExp=lv=>Math.floor(40*Math.pow(lv,1.7));
+const inTown=u=>mode==='field'&&Math.hypot(u.x-CX,u.y-CY)<TOWN;
+function clampW(u){const ww=mode==='field'?FW:WOEW,wh=mode==='field'?FW:WOEH;u.x=Math.max(u.r,Math.min(ww-u.r,u.x));u.y=Math.max(u.r,Math.min(wh-u.r,u.y))}
+function move(u,tx,ty,dt){const dx=tx-u.x,dy=ty-u.y,d=Math.hypot(dx,dy)||1,s=Math.min(d,u.spd*dt);u.x+=dx/d*s;u.y+=dy/d*s;clampW(u)}
+function log(m,c){const d=document.createElement('div');d.innerHTML=m;if(c)d.style.color=c;$('chat').appendChild(d);while($('chat').children.length>6)$('chat').firstChild.remove()}
+let bnT;function banner(m){const b=$('banner');b.textContent=m;b.style.opacity=1;clearTimeout(bnT);bnT=setTimeout(()=>b.style.opacity=0,2800)}
+function txt(x,y,s,c,big){fx.push({t:'txt',x,y,s,c,big,life:.9,max:.9})}
+const fmt=s=>{s=Math.max(0,Math.ceil(s));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')};
+function saveG(){if(P)localStorage.setItem('rlo',JSON.stringify({name:P.name,job:P.job,lv:P.lv,exp:P.exp,zeny:P.zeny,pots:P.pots,refine:P.refine}))}
+
+/* ---------- Entities ---------- */
+function recalc(p){const J=JOBS[p.job];p.mhp=Math.floor(J.hp*(1+(p.lv-1)*.15));p.msp=Math.floor(J.sp*(1+(p.lv-1)*.1));p.atk=Math.floor(J.atk+(p.lv-1)*2.5+p.refine*6);p.def=J.def+Math.floor(p.lv*.8);p.range=J.range;p.spd=J.spd}
+function makePlayer(name,job,s){const p={kind:'player',team:'f',name,job,x:CX,y:CY+60,r:15,lv:1,exp:0,zeny:200,pots:5,refine:0,acd:0,cds:[0,0,0],potcd:0,target:null,dest:null,dead:false};
+ if(s)Object.assign(p,{lv:s.lv,exp:s.exp,zeny:s.zeny,pots:s.pots,refine:s.refine});p.color=JOBS[job].color;recalc(p);p.hp=p.mhp;p.sp=p.msp;return p}
+function bandType(x,y){const d=Math.hypot(x-CX,y-CY);return d<600?'poring':d<900?'lunatic':d<1300?'wolf':d<1700?'orc':'deviruchi'}
+function spawnMob(){let x,y;do{x=R(60,FW-60);y=R(60,FW-60)}while(Math.hypot(x-CX,y-CY)<320);const k=bandType(x,y),M=MOBS[k];
+ fieldUnits.push({kind:'mob',team:'h',type:k,name:M.name,lv:M.lv,x,y,hx:x,hy:y,r:M.r,color:M.color,hp:M.hp,mhp:M.hp,atk:M.atk,def:M.def,spd:M.spd,range:8,exp:M.exp,z:M.z,passive:!!M.passive,aggro:160,acd:0,aspd:1.3,wt:0,wx:x,wy:y})}
+function makeBot(name,team,x,y,lv){const job=pick(Object.keys(JOBS)),J=JOBS[job],m=1+(lv-1)*.15,hp=Math.floor(J.hp*m*1.6);
+ return{kind:'bot',team,name,job,lv,x,y,r:15,color:team==='f'?J.color:'#dc2626',hp,mhp:hp,atk:Math.floor(J.atk+lv*2.3),def:Math.floor(J.def+lv*.8),spd:J.spd*.9,range:J.range,aggro:team==='f'?420:300,acd:R(0,1),aspd:1.1,wt:0,wx:x,wy:y}}
+function spawnBoss(){const lv=Math.max(25,P.lv+5),hp=5000+P.lv*400;
+ boss={kind:'boss',team:'h',type:'boss',name:'Baphomet',lv,x:LAIR.x,y:LAIR.y,hx:LAIR.x,hy:LAIR.y,r:36,color:'#4c1d95',hp,mhp:hp,atk:40+P.lv*2,def:10+Math.floor(P.lv/3),spd:80,range:12,aggro:260,acd:0,aspd:1.4,exp:1200+P.lv*80,z:[2000,4000],sk:5,wt:0,wx:LAIR.x,wy:LAIR.y};
+ fieldUnits.push(boss);banner('⚠️ MVP Baphomet ปรากฏตัวแล้ว!');log('👹 Baphomet ปรากฏที่รังบอส (มุมขวาบน) — กดปุ่ม "บอส" เพื่อวาร์ป','#f0abfc')}
+function initField(){fieldUnits=[P];for(let i=0;i<70;i++)spawnMob();
+ [...BOTN].sort(()=>Math.random()-.5).slice(0,7).forEach(n=>fieldUnits.push(makeBot(n,'f',CX+R(-150,150),CY+R(-150,150),Math.floor(R(3,35)))));
+ for(let i=0;i<220;i++){const x=R(0,FW),y=R(0,FW);if(Math.hypot(x-CX,y-CY)<320||Math.hypot(x-LAIR.x,y-LAIR.y)<260)continue;trees.push({x,y,s:R(14,22),c:pick(['#2f6b2a','#3a7d33','#285e24'])})}
+ units=fieldUnits}
+
+/* ---------- Combat ---------- */
+function hit(a,b,mult=1){if(b.dead||a.dead)return;let dmg=Math.max(1,Math.floor(a.atk*mult*R(.85,1.15)-b.def));const cr=Math.random()<.1;if(cr)dmg=Math.floor(dmg*1.5);
+ b.hp-=dmg;if(a===P)b.byP=true;if(b.passive)b.provoked=true;if(b.kind!=='emp'&&(!b.target||b.target.dead))b.target=a;
+ if(a===P||b===P||(Math.abs(b.x-P.x)<W/2+50&&Math.abs(b.y-P.y)<H/2+50))
+  txt(b.x+R(-10,10),b.y-b.r-10,(cr?'💥':'')+dmg,b===P?'#ff4d4d':a===P?(cr?'#fde047':'#fff'):'rgba(255,255,255,.55)',cr&&a===P);
+ if(b.hp<=0)kill(b,a)}
+function kill(u,by){u.dead=true;u.hp=0;
+ if(u===P){P.target=null;const loss=Math.floor(needExp(P.lv)*.05);P.exp=Math.max(0,P.exp-loss);log(`💀 คุณถูก ${esc(by.name)} สังหาร! เสีย EXP ${loss}`,'#f87171');setTimeout(respawnP,3000);return}
+ if(u.kind==='bot'&&u.team==='f'){const m=mode;setTimeout(()=>{if(m==='field'||(mode==='woe'&&woe&&!woe.done)){u.dead=false;u.hp=u.mhp;u.target=null;if(m==='field'){u.x=CX+R(-120,120);u.y=CY+R(-120,120)}else{u.x=150;u.y=R(400,600)}}},m==='field'?6000:8000);return}
+ if(u.byP&&u.exp){gainExp(u.exp);const z=Math.floor(R(u.z[0],u.z[1]));P.zeny+=z;txt(u.x,u.y-u.r-24,`+${z} z`,'#fde047');if(u.kind==='mob'&&Math.random()<.07){P.pots++;log('🧪 ได้รับ Red Potion','#fca5a5')}}
+ if(u.kind==='boss'){bossTimer=150;banner('🏆 Baphomet ถูกกำจัดแล้ว!');log(u.byP?`🏆 คุณได้รับ ${u.exp} EXP จากบอส!`:'บอสถูกปราบโดยผู้เล่นอื่น','#ffd400')}
+ if(u.kind==='bot'&&u.team==='h'){setTimeout(()=>{if(mode==='woe'&&woe&&!woe.done){u.dead=false;u.hp=u.mhp;u.x=u.hx;u.y=u.hy;u.target=null;u.byP=false}},15000)}
+ if(u.kind==='emp')woeWin()}
+function gainExp(e){P.exp+=e;txt(P.x,P.y-50,`+${e} EXP`,'#7dd3fc');
+ while(P.exp>=needExp(P.lv)){P.exp-=needExp(P.lv);P.lv++;recalc(P);P.hp=P.mhp;P.sp=P.msp;fx.push({t:'ring',x:P.x,y:P.y,r:10,R:100,c:'#ffd400',life:1,max:1});banner(`🎉 LEVEL UP! Lv.${P.lv}`);log(`🎉 เลเวลอัพ! ตอนนี้ Lv.${P.lv}`,'#ffd400')}saveG()}
+function respawnP(){P.dead=false;P.hp=P.mhp;P.sp=P.msp;P.target=null;P.dest=null;if(mode==='field'){P.x=CX;P.y=CY+60}else{P.x=150;P.y=500}}
+function nearestFoe(range,auto){let b=null,bd=range;for(const u of units){if(u.dead||u.team==='f')continue;if(auto&&u.kind==='mob'&&u.lv>P.lv+8)continue;const d=D(P,u);if(d<bd){bd=d;b=u}}return b}
+
+/* ---------- Player actions ---------- */
+function attackBtn(){if(!P||P.dead)return;const t=nearestFoe(500);if(t){P.target=t;P.dest=null}else txt(P.x,P.y-45,'ไม่มีเป้าหมายใกล้ๆ','#ccc')}
+function pot(){if(!P||P.dead||P.potcd>0)return;if(P.pots<=0){txt(P.x,P.y-45,'ยาหมด!','#fca5a5');return}P.pots--;P.potcd=.5;const h=Math.floor(P.mhp*.35);P.hp=Math.min(P.mhp,P.hp+h);txt(P.x,P.y-45,'+'+h,'#4ade80',1)}
+function skill(i){if(!P||P.dead)return;const J=JOBS[P.job],cost=[8,20,15][i];
+ if(P.cds[i]>0)return;if(P.sp<cost){txt(P.x,P.y-45,'SP ไม่พอ','#93c5fd');return}
+ if(i===0){const t=P.target&&!P.target.dead?P.target:nearestFoe(P.range+250);if(!t){txt(P.x,P.y-45,'ไม่มีเป้าหมาย','#ccc');return}
+  if(D(P,t)>P.range+t.r+P.r+60){P.target=t;txt(P.x,P.y-45,'ไกลเกินไป','#ccc');return}
+  P.target=t;P.sp-=cost;P.cds[0]=1.5;txt(P.x,P.y-60,J.s1+'!','#fde047',1);
+  if(P.job==='Archer'){hit(P,t,1.7);hit(P,t,1.7);fx.push({t:'line',x:P.x,y:P.y-10,x2:t.x,y2:t.y,c:'#86efac',w:5,life:.25,max:.25})}
+  else if(P.job==='Mage'){hit(P,t,3.2);fx.push({t:'line',x:P.x,y:P.y-10,x2:t.x,y2:t.y,c:'#f97316',w:7,life:.3,max:.3});fx.push({t:'ring',x:t.x,y:t.y,r:5,R:40,c:'#f97316',life:.4,max:.4})}
+  else{hit(P,t,2.8);fx.push({t:'ring',x:t.x,y:t.y,r:5,R:45,c:'#fbbf24',life:.35,max:.35})}}
+ else if(i===1){P.sp-=cost;P.cds[1]=6;txt(P.x,P.y-60,J.s2+'!','#fde047',1);const c=P.job==='Mage'?'#67e8f9':P.job==='Archer'?'#86efac':'#fb923c';
+  fx.push({t:'ring',x:P.x,y:P.y,r:10,R:170,c,life:.5,max:.5});for(const o of units)if(!o.dead&&o.team!=='f'&&D(P,o)<170+o.r)hit(P,o,P.job==='Mage'?2.2:1.8)}
+ else{P.sp-=cost;P.cds[2]=8;const h=Math.floor(P.mhp*.3);P.hp=Math.min(P.mhp,P.hp+h);txt(P.x,P.y-60,'Heal +'+h,'#4ade80',1);fx.push({t:'ring',x:P.x,y:P.y,r:45,R:5,c:'#4ade80',life:.5,max:.5})}}
+function toggleAuto(){autoHunt=!autoHunt;$('mAuto').textContent=autoHunt?'🤖 AUTO: เปิด':'🤖 AUTO: ปิด';$('mAuto').classList.toggle('on',autoHunt);if(!autoHunt&&P)P.target=null}
+
+/* ---------- WoE ---------- */
+function startWoE(){if(!P||mode!=='field'||P.dead)return;if(P.lv<5){log('⚠️ ต้อง Lv.5 ขึ้นไปถึงจะเข้าวอกิลด์ได้','#fbbf24');return}
+ mode='woe';woe={t:180,guild:pick(ENEMYG),done:false};woeUnits=[P];P.x=150;P.y=500;P.target=null;P.dest=null;P.hp=P.mhp;P.sp=P.msp;const lv=P.lv;
+ for(let i=0;i<5;i++)woeUnits.push(makeBot('[กิลด์เรา]'+pick(BOTN),'f',100+R(0,80),380+i*55,Math.max(1,lv+Math.floor(R(-3,3)))));
+ const ehp=2500+lv*200;woeUnits.push({kind:'emp',team:'h',name:'Emperium',x:1250,y:500,r:22,hp:ehp,mhp:ehp,atk:0,def:5,spd:0,range:0,aggro:0,acd:0,aspd:9});
+ [[820,440],[820,560],[950,350],[950,650],[1080,420],[1080,580],[1180,500],[700,500]].forEach(([x,y])=>{const g=makeBot(woe.guild+pick(BOTN),'h',x,y,Math.max(1,lv+Math.floor(R(-2,3))));g.hx=x;g.hy=y;g.aggro=280;g.exp=lv*25+20;g.z=[80,200];woeUnits.push(g)});
+ units=woeUnits;fx=[];banner(`⚔️ War of Emperium! ทำลาย Emperium ของ ${woe.guild}`);log('⚔️ วอกิลด์เริ่มแล้ว! มีเวลา 3 นาที บุกไปทางขวาแล้วทำลายคริสตัลสีทอง','#fbbf24')}
+function woeWin(){if(!woe||woe.done)return;woe.done=true;const z=3000+P.lv*150,e=Math.floor(needExp(P.lv)*.5);P.zeny+=z;gainExp(e);banner('🏆 ชนะ! กิลด์ของคุณยึดปราสาทได้!');log(`🏆 รางวัลวอกิลด์: ${z} Zeny + ${e} EXP`,'#ffd400');setTimeout(backField,4000)}
+function woeEnd(){woe.done=true;banner('⌛ หมดเวลา! ยึดปราสาทไม่สำเร็จ');setTimeout(backField,3000)}
+function backField(){mode='field';units=fieldUnits;woe=null;P.x=CX;P.y=CY+60;P.dead=false;P.hp=P.mhp;P.target=null;P.dest=null;fx=[]}
+
+/* ---------- AI ---------- */
+function ai(u,dt){if(u.dead||u.kind==='emp')return;if(u.say)u.say.t-=dt;u.acd-=dt;
+ if(u.team==='f')u.hp=Math.min(u.mhp,u.hp+u.mhp*.02*dt);
+ if(u.hx!==undefined){const hd=Math.hypot(u.x-u.hx,u.y-u.hy);if(hd>(u.kind==='bot'?450:650))u.ret=true;
+  if(u.ret){u.target=null;u.provoked=false;move(u,u.hx,u.hy,dt*1.5);u.hp=Math.min(u.mhp,u.hp+u.mhp*.1*dt);if(hd<20)u.ret=false;return}}
+ let t=u.target;
+ if(t&&(t.dead||t.team===u.team||D(u,t)>u.aggro*2.5||(u.team==='h'&&inTown(t))))t=u.target=null;
+ if(!t&&!(u.passive&&!u.provoked)){let bd=u.aggro;for(const o of units){if(o.dead||o.team===u.team)continue;if(u.team==='h'&&inTown(o))continue;const d=D(u,o);if(d<bd){bd=d;t=o}}u.target=t}
+ if(t){const d=D(u,t),reach=u.r+t.r+u.range;
+  if(d>reach)move(u,t.x,t.y,dt);else if(u.acd<=0){u.acd=u.aspd;hit(u,t);if(u.range>60)fx.push({t:'line',x:u.x,y:u.y-10,x2:t.x,y2:t.y,c:u.color,life:.12,max:.12})}
+  if(u.kind==='boss'){u.sk-=dt;if(u.sk<=0){u.sk=5;fx.push({t:'ring',x:u.x,y:u.y,r:20,R:180,c:'#d946ef',life:.6,max:.6});txt(u.x,u.y-70,'Dark Earthquake!','#f0abfc',1);for(const o of units)if(!o.dead&&o.team==='f'&&D(u,o)<180)hit(u,o,1.3)}}}
+ else if(u.kind==='bot'&&mode==='woe'&&u.team==='f'){const e=units.find(o=>o.kind==='emp'&&!o.dead);if(e)move(u,e.x,e.y,dt)}
+ else if(u.kind==='bot'&&mode==='field'&&boss&&!boss.dead){move(u,boss.x,boss.y,dt)}
+ else{u.wt-=dt;if(u.wt<=0){u.wt=R(2,5);const home=u.hx!==undefined,rad=home?110:400;u.wx=(home?u.hx:u.x)+R(-rad,rad);u.wy=(home?u.hy:u.y)+R(-rad,rad)}if(Math.hypot(u.x-u.wx,u.y-u.wy)>5)move(u,u.wx,u.wy,dt*.5)}
+ if(u.team==='h'&&mode==='field'&&u.kind!=='boss'){const d=Math.hypot(u.x-CX,u.y-CY)||1;if(d<TOWN+u.r){u.x=CX+(u.x-CX)/d*(TOWN+u.r);u.y=CY+(u.y-CY)/d*(TOWN+u.r)}}}
+function botChat(){const b=units.filter(u=>u.kind==='bot'&&u.team==='f'&&!u.dead);if(!b.length)return;const u=pick(b),s=pick(mode==='woe'?WCHAT:CHAT);u.say={s,t:4};log(`<b style="color:${u.color}">${esc(u.name)}</b>: ${s}`)}
+
+/* ---------- Update ---------- */
+const keys={},joy={x:0,y:0,id:null,cx:0,cy:0};
+function updP(dt){P.potcd=Math.max(0,P.potcd-dt);if(P.dead)return;P.acd-=dt;for(let i=0;i<3;i++)P.cds[i]=Math.max(0,P.cds[i]-dt);
+ const town=inTown(P);P.sp=Math.min(P.msp,P.sp+P.msp*(town?.1:.015)*dt);P.hp=Math.min(P.mhp,P.hp+P.mhp*(town?.12:.004)*dt);
+ if(autoHunt&&P.hp<P.mhp*.35&&P.pots>0)pot();
+ let mx=joy.x+((keys.d||keys.arrowright)?1:0)-((keys.a||keys.arrowleft)?1:0),my=joy.y+((keys.s||keys.arrowdown)?1:0)-((keys.w||keys.arrowup)?1:0);const m=Math.hypot(mx,my);
+ if(m>.1){if(m>1){mx/=m;my/=m}P.x+=mx*P.spd*dt;P.y+=my*P.spd*dt;clampW(P);P.target=null;P.dest=null;return}
+ if(P.target&&P.target.dead)P.target=null;
+ if(!P.target&&autoHunt&&!P.dest)P.target=nearestFoe(mode==='woe'?2000:1200,true);
+ if(P.target){const t=P.target,d=D(P,t),reach=P.r+t.r+P.range;
+  if(d>reach)move(P,t.x,t.y,dt);
+  else{if(autoHunt&&P.cds[0]<=0&&P.sp>=30)skill(0);if(P.acd<=0&&!t.dead){P.acd=.75;hit(P,t);if(P.range>60)fx.push({t:'line',x:P.x,y:P.y-10,x2:t.x,y2:t.y,c:P.color,life:.15,max:.15})}}}
+ else if(P.dest){move(P,P.dest.x,P.dest.y,dt);if(D(P,P.dest)<5)P.dest=null}}
+let spawnT=0,chatT=6,saveT=5;
+function update(dt){updP(dt);for(const u of units)if(u!==P)ai(u,dt);
+ for(const f of fx)f.life-=dt;fx=fx.filter(f=>f.life>0);
+ if(mode==='field'){fieldUnits=fieldUnits.filter(u=>!(u.dead&&(u.kind==='mob'||u.kind==='boss')));units=fieldUnits;
+  spawnT-=dt;if(spawnT<=0&&fieldUnits.filter(u=>u.kind==='mob').length<70){spawnMob();spawnT=.4}
+  if(!boss||boss.dead){bossTimer-=dt;if(bossTimer<=0)spawnBoss()}}
+ else if(woe&&!woe.done){woe.t-=dt;if(woe.t<=0)woeEnd()}
+ chatT-=dt;if(chatT<=0){chatT=R(6,14);botChat()}saveT-=dt;if(saveT<=0){saveT=5;saveG()}}
+
+/* ---------- Render ---------- */
+function circ(x,y,r){ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill()}
+function label(s,x,y,c,f){ctx.font=f||'bold 11px Tahoma';ctx.textAlign='center';ctx.lineWidth=3;ctx.strokeStyle='rgba(0,0,0,.8)';ctx.strokeText(s,x,y);ctx.fillStyle=c;ctx.fillText(s,x,y)}
+function drawGround(){
+ if(mode==='field'){ctx.fillStyle='#3d3550';ctx.fillRect(0,0,FW,FW);
+  [[1700,'#6b5a3a'],[1300,'#4c7a35'],[900,'#63a34a'],[600,'#7dc160']].forEach(([r,c])=>{ctx.fillStyle=c;circ(CX,CY,r)});
+  ctx.fillStyle='#2a1030';circ(LAIR.x,LAIR.y,230);label("Baphomet's Lair",LAIR.x,LAIR.y+200,'#f0abfc','bold 16px Tahoma');
+  ctx.fillStyle='#cdb88e';circ(CX,CY,TOWN);ctx.strokeStyle='#8a7550';ctx.lineWidth=6;ctx.beginPath();ctx.arc(CX,CY,TOWN,0,7);ctx.stroke();
+  ctx.fillStyle='#4fc3f7';circ(CX,CY,38);label('PRONTERA (Safe Zone)',CX,CY-TOWN+30,'#fff','bold 15px Tahoma')}
+ else{ctx.fillStyle='#5b5b66';ctx.fillRect(0,0,WOEW,WOEH);ctx.fillStyle='#4a6a4a';ctx.fillRect(0,0,260,WOEH);
+  ctx.fillStyle='#7a6248';ctx.fillRect(800,150,600,700);ctx.fillStyle='#8b1a1a';ctx.fillRect(820,470,430,60);
+  ctx.fillStyle='#2e2e38';ctx.fillRect(800,150,20,280);ctx.fillRect(800,570,20,280);ctx.fillRect(800,150,600,20);ctx.fillRect(800,830,600,20);
+  label('Castle of '+woe.guild,1100,200,'#fde047','bold 18px Tahoma');label('จุดเกิดกิลด์เรา',130,330,'#bbf7d0','bold 13px Tahoma')}
+ ctx.strokeStyle='rgba(0,0,0,.07)';ctx.lineWidth=1;ctx.beginPath();const x0=Math.floor(camX/100)*100,y0=Math.floor(camY/100)*100;
+ for(let x=x0;x<camX+W+100;x+=100){ctx.moveTo(x,camY);ctx.lineTo(x,camY+H)}for(let y=y0;y<camY+H+100;y+=100){ctx.moveTo(camX,y);ctx.lineTo(camX+W,y)}ctx.stroke();
+ if(mode==='field')for(const t of trees){if(t.x<camX-40||t.x>camX+W+40||t.y<camY-60||t.y>camY+H+40)continue;ctx.fillStyle='#5b3a1e';ctx.fillRect(t.x-4,t.y-6,8,16);ctx.fillStyle=t.c;circ(t.x,t.y-16,t.s)}}
+function drawUnit(u){const x=u.x,y=u.y,r=u.r;if(x<camX-100||x>camX+W+100||y<camY-100||y>camY+H+100)return;
+ const bob=Math.sin(performance.now()/180+x*.1)*2;let top;
+ ctx.fillStyle='rgba(0,0,0,.3)';ctx.beginPath();ctx.ellipse(x,y+r*.7,r,r*.35,0,0,7);ctx.fill();
+ if(P.target===u){ctx.strokeStyle='#ff3b3b';ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(x,y+r*.7,r+7,(r+7)*.4,0,0,7);ctx.stroke()}
+ if(u.kind==='emp'){const t=performance.now()/400,cy=y-22;ctx.fillStyle='rgba(255,215,0,.25)';circ(x,cy,r+10+Math.sin(t)*4);ctx.fillStyle='#facc15';ctx.beginPath();ctx.moveTo(x,cy-r*1.3);ctx.lineTo(x+r*.8,cy);ctx.lineTo(x,cy+r*1.3);ctx.lineTo(x-r*.8,cy);ctx.closePath();ctx.fill();ctx.strokeStyle='#a16207';ctx.lineWidth=2;ctx.stroke();top=cy-r*1.3-4}
+ else if(u.kind==='player'||u.kind==='bot'){const by=y-4+bob*.4;ctx.fillStyle=u.color;circ(x,by,r*.8);ctx.fillStyle='#ffe0bd';circ(x,by-r*1.05,r*.62);
+  ctx.fillStyle=u.team==='f'?(u===P?'#f59e0b':'#6b4423'):'#111';ctx.beginPath();ctx.arc(x,by-r*1.1,r*.64,Math.PI,0);ctx.fill();
+  ctx.fillStyle='#000';circ(x-3,by-r,1.6);circ(x+3,by-r,1.6);
+  ctx.strokeStyle=u.job==='Swordman'?'#e5e7eb':u.job==='Mage'?'#a16207':'#854d0e';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(x+r*.7,by);ctx.lineTo(x+r*1.3,by-r*1.1);ctx.stroke();
+  if(u.team==='h'){ctx.strokeStyle='#ff0000';ctx.lineWidth=2;ctx.beginPath();ctx.arc(x,by,r*.8,0,7);ctx.stroke()}top=by-r*1.8}
+ else{const by=y-r*.3+bob;
+  if(u.kind==='boss'){ctx.fillStyle='#d4d4d4';ctx.beginPath();ctx.moveTo(x-r*.6,by-r*.6);ctx.lineTo(x-r*1.1,by-r*1.6);ctx.lineTo(x-r*.2,by-r*.85);ctx.fill();ctx.beginPath();ctx.moveTo(x+r*.6,by-r*.6);ctx.lineTo(x+r*1.1,by-r*1.6);ctx.lineTo(x+r*.2,by-r*.85);ctx.fill()}
+  if(u.type==='lunatic'){ctx.fillStyle='#fff';ctx.beginPath();ctx.ellipse(x-5,by-r-6,3,9,-.2,0,7);ctx.fill();ctx.beginPath();ctx.ellipse(x+5,by-r-6,3,9,.2,0,7);ctx.fill()}
+  ctx.fillStyle=u.color;ctx.beginPath();ctx.ellipse(x,by,r,r*(u.type==='poring'?.85:1),0,0,7);ctx.fill();
+  ctx.fillStyle='rgba(255,255,255,.35)';circ(x-r*.4,by-r*.4,r*.22);
+  ctx.fillStyle='#fff';circ(x-r*.33,by-r*.1,r*.22);circ(x+r*.33,by-r*.1,r*.22);ctx.fillStyle=u.kind==='boss'?'#ff2020':'#111';circ(x-r*.3,by-r*.08,r*.12);circ(x+r*.36,by-r*.08,r*.12);
+  top=by-r-(u.kind==='boss'?r*1.1:4)}
+ const isMob=u.kind==='mob'||u.kind==='boss';
+ label(isMob?`${u.name} Lv.${u.lv}`:u.name,x,top-8,u===P?'#fde047':u.kind==='boss'?'#f0abfc':u.team==='f'?'#bfdbfe':'#fecaca',u.kind==='boss'?'bold 14px Tahoma':null);
+ if(u.hp<u.mhp||u.kind==='boss'||u.kind==='emp'||u===P){const w=u.kind==='boss'||u.kind==='emp'?80:34;ctx.fillStyle='#000';ctx.fillRect(x-w/2-1,top-4,w+2,6);ctx.fillStyle=u.team==='f'?'#22c55e':'#ef4444';ctx.fillRect(x-w/2,top-3,w*Math.max(0,u.hp/u.mhp),4)}
+ if(u.say&&u.say.t>0){ctx.font='11px Tahoma';const tw=ctx.measureText(u.say.s).width+10;ctx.fillStyle='rgba(255,255,255,.92)';ctx.fillRect(x-tw/2,top-38,tw,18);ctx.fillStyle='#111';ctx.textAlign='center';ctx.fillText(u.say.s,x,top-25)}}
+function drawMini(){const ww=mode==='field'?FW:WOEW,wh=mode==='field'?FW:WOEH,sx=110/ww,sy=110/wh;mctx.clearRect(0,0,110,110);
+ if(mode==='field'){mctx.fillStyle='rgba(205,184,142,.6)';mctx.beginPath();mctx.arc(CX*sx,CY*sy,TOWN*sx,0,7);mctx.fill();mctx.fillStyle='rgba(120,0,120,.5)';mctx.beginPath();mctx.arc(LAIR.x*sx,LAIR.y*sy,230*sx,0,7);mctx.fill()}
+ else{mctx.fillStyle='rgba(122,98,72,.6)';mctx.fillRect(800*sx,150*sy,600*sx,700*sy)}
+ for(const u of units){if(u.dead)continue;let c,s;if(u===P){c='#fff';s=3.5}else if(u.kind==='boss'){c='#f0f';s=5}else if(u.kind==='emp'){c='#facc15';s=4}else if(u.team==='f'){c='#60a5fa';s=2.5}else{c=u.kind==='bot'?'#ef4444':'rgba(239,68,68,.6)';s=u.kind==='bot'?2.5:1.3}mctx.fillStyle=c;mctx.fillRect(u.x*sx-s/2,u.y*sy-s/2,s,s)}
+ mctx.strokeStyle='rgba(255,255,255,.5)';mctx.lineWidth=1;mctx.strokeRect(camX*sx,camY*sy,W*sx,H*sy)}
+function draw(){camX=P.x-W/2;camY=P.y-H/2;ctx.fillStyle='#0b0b14';ctx.fillRect(0,0,W,H);
+ ctx.save();ctx.translate(-Math.round(camX),-Math.round(camY));drawGround();
+ for(const u of units.filter(u=>!u.dead).sort((a,b)=>a.y-b.y))drawUnit(u);
+ for(const f of fx){const a=f.life/f.max;ctx.globalAlpha=Math.min(1,a*1.6);
+  if(f.t==='txt')label(f.s,f.x,f.y-(1-a)*35,f.c,f.big?'bold 16px Tahoma':'bold 13px Tahoma');
+  else if(f.t==='line'){ctx.strokeStyle=f.c;ctx.lineWidth=f.w||3;ctx.beginPath();ctx.moveTo(f.x,f.y);ctx.lineTo(f.x2,f.y2);ctx.stroke()}
+  else if(f.t==='ring'){ctx.strokeStyle=f.c;ctx.lineWidth=5;ctx.beginPath();ctx.arc(f.x,f.y,Math.max(1,f.r+(f.R-f.r)*(1-a)),0,7);ctx.stroke()}}
+ ctx.globalAlpha=1;ctx.restore();
+ if(P.dead){ctx.fillStyle='rgba(80,0,0,.45)';ctx.fillRect(0,0,W,H);label('💀 คุณตายแล้ว... กำลังเกิดใหม่',W/2,H/2,'#fff','bold 22px Tahoma')}
+ drawMini()}
+
+/* ---------- HUD ---------- */
+function bar(k,v,m){$(k+'B').style.width=Math.max(0,v/m*100)+'%';$(k+'T').textContent=`${k.toUpperCase()} ${Math.ceil(Math.max(0,v))}/${m}`}
+function updHUD(){$('hName').textContent=`${P.name}  Lv.${P.lv} ${P.job}`;bar('hp',P.hp,P.mhp);bar('sp',P.sp,P.msp);
+ const ne=needExp(P.lv);$('exB').style.width=(P.exp/ne*100)+'%';$('exT').textContent=`EXP ${(P.exp/ne*100).toFixed(1)}%`;
+ $('hInfo').innerHTML=`💰 ${P.zeny.toLocaleString()}z &nbsp;ATK ${P.atk} DEF ${P.def} ⚒️+${P.refine}`;$('bPot').innerHTML=`🧪<br>${P.pots}`;
+ const J=JOBS[P.job],nm=[J.s1,J.s2,'Heal'];['bS1','bS2','bS3'].forEach((id,i)=>{const c=P.cds[i];$(id).innerHTML=c>0?c.toFixed(1):nm[i].replace(' ','<br>');$(id).style.opacity=c>0?.5:1});
+ $('mBoss').textContent=boss&&!boss.dead?'👹 บอส: เกิดแล้ว!':`👹 บอส ${fmt(bossTimer)}`;
+ const wb=$('woebar');if(mode==='woe'&&woe){wb.style.display='block';const e=woeUnits.find(u=>u.kind==='emp');wb.innerHTML=`⚔️ vs ${woe.guild}<br>⏱ ${fmt(woe.t)} | Emperium ${Math.ceil(Math.max(0,e.hp)/e.mhp*100)}%`}else wb.style.display='none'}
+
+/* ---------- Shop ---------- */
+const refCost=()=>200*(P.refine+1)*(P.refine+1),refRate=()=>P.refine<4?100:Math.max(10,100-(P.refine-3)*15);
+function updShop(){$('sInfo').innerHTML=`💰 ${P.zeny.toLocaleString()} Zeny | 🧪 ${P.pots} | ATK ${P.atk}`;$('refT').innerHTML=P.refine>=10?'⚒️ อาวุธ +10 (สูงสุดแล้ว)':`⚒️ อาวุธ +${P.refine} → +${P.refine+1}<br><small>${refCost()}z • สำเร็จ ${refRate()}%</small>`}
+function buy(n){const c=n>=10?450:50*n;if(P.zeny<c){$('sMsg').innerHTML='<span style="color:#f87171">Zeny ไม่พอ</span>';return}P.zeny-=c;P.pots+=n;$('sMsg').textContent=`ซื้อ Red Potion x${n} แล้ว`;updShop();saveG()}
+function refine(){if(P.refine>=10)return;const c=refCost();if(P.zeny<c){$('sMsg').innerHTML='<span style="color:#f87171">Zeny ไม่พอ</span>';return}P.zeny-=c;
+ if(Math.random()*100<refRate()){P.refine++;$('sMsg').innerHTML=`<span style="color:#fde047">✨ สำเร็จ! อาวุธ +${P.refine}</span>`}else{P.refine=Math.max(0,P.refine-1);$('sMsg').innerHTML=`<span style="color:#f87171">💥 ล้มเหลว! อาวุธเหลือ +${P.refine}</span>`}recalc(P);updShop();saveG()}
+function openShop(){if(mode!=='field'){log('ร้านค้าใช้ได้เฉพาะแผนที่หลัก');return}$('sMsg').textContent='';updShop();$('shop').classList.remove('hide')}
+
+/* ---------- Input ---------- */
+const jz=$('joy'),kn=$('knob');
+function jm(t){let dx=t.clientX-joy.cx,dy=t.clientY-joy.cy;const d=Math.hypot(dx,dy),m=50;if(d>m){dx=dx/d*m;dy=dy/d*m}kn.style.transform=`translate(${dx}px,${dy}px)`;joy.x=dx/m;joy.y=dy/m;if(Math.abs(joy.x)<.15&&Math.abs(joy.y)<.15)joy.x=joy.y=0}
+jz.addEventListener('touchstart',e=>{e.preventDefault();const t=e.changedTouches[0];joy.id=t.identifier;const r=jz.getBoundingClientRect();joy.cx=r.left+r.width/2;joy.cy=r.top+r.height/2;jm(t)},{passive:false});
+jz.addEventListener('touchmove',e=>{e.preventDefault();for(const t of e.changedTouches)if(t.identifier===joy.id)jm(t)},{passive:false});
+const je=e=>{for(const t of e.changedTouches)if(t.identifier===joy.id){joy.id=null;joy.x=joy.y=0;kn.style.transform='translate(0,0)'}};
+jz.addEventListener('touchend',je);jz.addEventListener('touchcancel',je);
+cv.addEventListener('pointerdown',e=>{if(!P||P.dead)return;const wx=e.clientX+camX,wy=e.clientY+camY;let best=null,bd=40;
+ for(const u of units){if(u.dead||u.team==='f')continue;const d=Math.hypot(u.x-wx,u.y-wy)-u.r;if(d<bd){bd=d;best=u}}if(best){P.target=best;P.dest=null}else{P.dest={x:wx,y:wy};P.target=null}});
+addEventListener('keydown',e=>{if(!P||e.target.tagName==='INPUT')return;const k=e.key.toLowerCase();if(keys[k])return;keys[k]=true;
+ if(k==='j'||k===' ')attackBtn();if(k==='1')skill(0);if(k==='2')skill(1);if(k==='3')skill(2);if(k==='q')pot();if(k==='e')toggleAuto()});
+addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
+const tap=(id,f)=>$(id).addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();f()});
+tap('bAtk',attackBtn);tap('bS1',()=>skill(0));tap('bS2',()=>skill(1));tap('bS3',()=>skill(2));tap('bPot',pot);
+$('mAuto').onclick=toggleAuto;$('mWoe').onclick=startWoE;$('mShop').onclick=openShop;
+$('mBoss').onclick=()=>{if(mode!=='field'||!P)return;if(boss&&!boss.dead){P.x=LAIR.x-260;P.y=LAIR.y+260;P.target=null;P.dest=null;log('🌀 วาร์ปไปยังรังบอส!','#c4b5fd')}else log(`👹 Baphomet จะเกิดในอีก ${fmt(bossTimer)}`)};
+$('buy1').onclick=()=>buy(1);$('buy10').onclick=()=>buy(10);$('bRef').onclick=refine;$('sClose').onclick=()=>$('shop').classList.add('hide');
+$('sReset').onclick=()=>{if(confirm('ลบเซฟทั้งหมดและเริ่มใหม่?')){P=null;localStorage.removeItem('rlo');location.reload()}};
+addEventListener('visibilitychange',saveG);
+
+/* ---------- Start ---------- */
+document.querySelectorAll('.jobs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.jobs button').forEach(x=>x.classList.remove('sel'));b.classList.add('sel');selJob=b.dataset.j});
+const sv=JSON.parse(localStorage.getItem('rlo')||'null');
+if(sv){$('bCont').classList.remove('hide');$('bCont').textContent=`▶️ เล่นต่อ: ${sv.name} Lv.${sv.lv} ${sv.job}`;$('bCont').onclick=()=>begin(sv.name,sv.job,sv)}
+$('bStart').onclick=()=>begin($('iName').value.trim()||'Novice'+Math.floor(R(100,999)),selJob,null);
+function begin(name,job,s){P=makePlayer(name,job,s);initField();['hud','mini','menu','joy','acts'].forEach(i=>$(i).classList.remove('hide'));$('start').classList.add('hide');
+ log(`ยินดีต้อนรับ <b>${esc(name)}</b> สู่ Ragna Lite Online!`,'#ffd400');log('💡 กด AUTO เพื่อล่ามอนอัตโนมัติ • ในเมืองฟื้น HP/SP เร็ว','#99ffdd');saveG()}
+let lastT=0,hudT=0;
+function loop(ts){const dt=Math.min(.05,(ts-lastT)/1000||0);lastT=ts;if(P){update(dt);draw();hudT-=dt;if(hudT<=0){hudT=.1;updHUD()}}requestAnimationFrame(loop)}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
